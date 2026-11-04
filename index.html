@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>HW7 · Gravity Station Reduction</title>
+<meta name="description" content="Geophysics HW7 — gravity station data, corrections and anomalies, with an interactive calculator." />
+<style>
+  :root {
+    --bg: #0b1020;
+    --bg-soft: #121a33;
+    --card: #161f3d;
+    --card-2: #1b2650;
+    --line: #2a3766;
+    --text: #e8ecf8;
+    --muted: #9aa8c9;
+    --accent: #6ea8ff;
+    --accent-2: #7ce7c4;
+    --warn: #ffcf70;
+    --shadow: 0 18px 50px rgba(0,0,0,.35);
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(110,168,255,.18), transparent 60%),
+      radial-gradient(900px 500px at 110% 0%, rgba(124,231,196,.12), transparent 55%),
+      var(--bg);
+    line-height: 1.7;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  /* ---------- header ---------- */
+  header { padding: 64px 0 36px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--accent-2);
+    border: 1px solid rgba(124,231,196,.35);
+    background: rgba(124,231,196,.08);
+    padding: 6px 12px; border-radius: 999px;
+  }
+  h1 {
+    margin: 18px 0 10px;
+    font-size: clamp(30px, 5vw, 52px);
+    line-height: 1.15;
+    letter-spacing: -.02em;
+  }
+  h1 .grad {
+    background: linear-gradient(90deg, #8bb8ff, #7ce7c4 60%, #ffd479);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { color: var(--muted); max-width: 760px; margin: 0; font-size: 17px; }
+  .header-links { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    text-decoration: none; color: var(--text);
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, var(--card-2), var(--card));
+    padding: 10px 16px; border-radius: 12px;
+    font-size: 14px; transition: .18s ease;
+  }
+  .btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+  /* ---------- sections ---------- */
+  section { padding: 26px 0; }
+  .section-title {
+    display: flex; align-items: baseline; gap: 12px;
+    margin: 0 0 18px;
+  }
+  .section-title h2 { font-size: 24px; margin: 0; letter-spacing: -.01em; }
+  .section-title span { color: var(--muted); font-size: 14px; }
+
+  .panel {
+    background: linear-gradient(180deg, rgba(27,38,80,.9), rgba(22,31,61,.9));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+  }
+
+  /* ---------- data cards ---------- */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    background: linear-gradient(180deg, var(--card-2), var(--card));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .card .k { color: var(--muted); font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; }
+  .card .v { font-size: 24px; font-weight: 650; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .card .v small { font-size: 14px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+
+  /* ---------- problem ---------- */
+  .problem ol { margin: 10px 0 0; padding-left: 22px; }
+  .problem ol.roman { list-style: lower-roman; }
+  .problem li { margin: 6px 0; }
+  .problem .lead { color: var(--muted); margin: 0 0 8px; }
+  .tag {
+    display: inline-block; font-size: 12px; color: var(--warn);
+    border: 1px solid rgba(255,207,112,.35); background: rgba(255,207,112,.08);
+    padding: 2px 8px; border-radius: 6px; margin-right: 6px;
+    letter-spacing: .06em;
+  }
+
+  /* ---------- calculator ---------- */
+  .calc-grid {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 860px) { .calc-grid { grid-template-columns: 1fr; } }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13.5px; color: var(--muted); margin-bottom: 6px; }
+  .field input, .field select {
+    width: 100%; padding: 10px 12px;
+    background: #0e152c; color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px;
+    font-size: 15px; font-variant-numeric: tabular-nums;
+    outline: none; transition: .15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110,168,255,.18); }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+
+  .results { display: grid; gap: 12px; }
+  .result-block {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(11,16,32,.35);
+  }
+  .result-block h3 {
+    margin: 0; padding: 12px 16px;
+    font-size: 14px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--accent-2);
+    background: rgba(124,231,196,.07);
+    border-bottom: 1px solid var(--line);
+  }
+  .result-block.ocean h3 { color: var(--accent); background: rgba(110,168,255,.08); }
+  .row {
+    display: flex; justify-content: space-between; gap: 14px;
+    padding: 10px 16px; border-bottom: 1px dashed rgba(42,55,102,.7);
+    font-size: 14.5px;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row .lbl { color: var(--muted); }
+  .row .val { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  .row.total { background: rgba(110,168,255,.07); }
+  .row.total .lbl { color: var(--text); }
+  .row.total .val { color: var(--warn); font-size: 16px; }
+
+  .formula {
+    margin-top: 18px; padding: 14px 16px;
+    border-left: 3px solid var(--accent);
+    background: rgba(110,168,255,.06);
+    border-radius: 0 10px 10px 0;
+    font-size: 13.5px; color: var(--muted);
+  }
+  .formula code { color: var(--text); font-size: 13px; }
+
+  /* ---------- figure ---------- */
+  .figure { text-align: center; }
+  .figure img {
+    max-width: 100%; border-radius: 12px;
+    border: 1px solid var(--line);
+    background: #fff; padding: 8px;
+  }
+  .figure figcaption { color: var(--muted); font-size: 13.5px; margin-top: 10px; }
+
+  footer {
+    margin-top: 40px; padding: 30px 0 50px;
+    border-top: 1px solid var(--line);
+    color: var(--muted); font-size: 13.5px;
+    display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <span class="badge">● Geophysics · HW7 · Problem 8-2</span>
+    <h1>Gravity Station <span class="grad">Reduction</span></h1>
+    <p class="sub">
+      重力測站資料整理與異常計算：理論重力、自由空氣修正、布蓋修正，
+      以及自由空氣重力異常與布蓋重力異常。頁面附互動計算器，可即時驗算。
+    </p>
+    <div class="header-links">
+      <a class="btn" href="#data">測站資料</a>
+      <a class="btn" href="#problem">題目</a>
+      <a class="btn" href="#calculator">互動計算</a>
+      <a class="btn" href="HW7.png" target="_blank" rel="noopener">原始題目圖</a>
+      <a class="btn" href="HW7.md" target="_blank" rel="noopener">Markdown</a>
+    </div>
+  </header>
+
+  <section id="data">
+    <div class="section-title"><h2>Station Data</h2><span>測站基本資料</span></div>
+    <div class="cards">
+      <div class="card"><div class="k">Latitude</div><div class="v">48.1195°<small>N</small></div></div>
+      <div class="card"><div class="k">Longitude</div><div class="v">12.1878°<small>E</small></div></div>
+      <div class="card"><div class="k">Elevation</div><div class="v">487.9<small>m</small></div></div>
+      <div class="card"><div class="k">Observed gravity</div><div class="v">980,717.39<small>mGal</small></div></div>
+    </div>
+  </section>
+
+  <section id="problem" class="problem">
+    <div class="section-title"><h2>Problem 8-2</h2><span>題目原文</span></div>
+    <div class="panel">
+      <p class="lead">Given the following data for a gravity station:</p>
+      <ol>
+        <li><span class="tag">a</span>Calculate the:</li>
+      </ol>
+      <ol class="roman">
+        <li>theoretical gravity;</li>
+        <li>free air correction;</li>
+        <li>Bouguer correction;</li>
+        <li>free air gravity anomaly; and</li>
+        <li>Bouguer gravity anomaly.</li>
+      </ol>
+      <ol start="2">
+        <li><span class="tag">b</span>Suppose that the gravity station in (a) had exactly the same latitude,
+          longitude and observed gravity, but it was located on the surface of the ocean,
+          over a water depth of 487.9 m. Recompute the free-air and Bouguer gravity anomalies.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="calculator">
+    <div class="section-title"><h2>Interactive Calculator</h2><span>互動計算器（可直接改數值）</span></div>
+    <div class="panel">
+      <div class="calc-grid">
+        <div>
+          <div class="field">
+            <label for="lat">Latitude φ (°)</label>
+            <input id="lat" type="number" step="0.0001" value="48.1195" />
+          </div>
+          <div class="field">
+            <label for="h">Elevation / water depth h (m)</label>
+            <input id="h" type="number" step="0.1" value="487.9" />
+          </div>
+          <div class="field">
+            <label for="gobs">Observed gravity (mGal)</label>
+            <input id="gobs" type="number" step="0.01" value="980717.39" />
+          </div>
+          <div class="field">
+            <label for="rho">Rock density ρ (g/cm³)</label>
+            <input id="rho" type="number" step="0.01" value="2.67" />
+          </div>
+          <div class="field">
+            <label for="rhow">Water density ρ<sub>w</sub> (g/cm³)</label>
+            <input id="rhow" type="number" step="0.01" value="1.03" />
+          </div>
+          <div class="field">
+            <label for="formula">Theoretical gravity formula</label>
+            <select id="formula">
+              <option value="1967" selected>IGF 1967</option>
+              <option value="1980">GRS 1980</option>
+              <option value="1930">IGF 1930</option>
+            </select>
+            <div class="hint" id="formulaHint"></div>
+          </div>
+        </div>
+
+        <div class="results">
+          <div class="result-block">
+            <h3>a) Land station</h3>
+            <div class="row"><span class="lbl">Theoretical gravity γ</span><span class="val" id="aTheo">–</span></div>
+            <div class="row"><span class="lbl">Free-air correction 0.3086·h</span><span class="val" id="aFac">–</span></div>
+            <div class="row"><span class="lbl">Bouguer correction 0.04193·ρ·h</span><span class="val" id="aBc">–</span></div>
+            <div class="row total"><span class="lbl">Free-air anomaly g<sub>FA</sub></span><span class="val" id="aFaa">–</span></div>
+            <div class="row total"><span class="lbl">Bouguer anomaly g<sub>B</sub></span><span class="val" id="aBa">–</span></div>
+          </div>
+
+          <div class="result-block ocean">
+            <h3>b) Ocean station (at sea surface)</h3>
+            <div class="row"><span class="lbl">Theoretical gravity γ</span><span class="val" id="bTheo">–</span></div>
+            <div class="row"><span class="lbl">Free-air correction (h = 0)</span><span class="val" id="bFac">–</span></div>
+            <div class="row"><span class="lbl">Bouguer correction 0.04193·(ρ−ρ<sub>w</sub>)·d</span><span class="val" id="bBc">–</span></div>
+            <div class="row total"><span class="lbl">Free-air anomaly g<sub>FA</sub></span><span class="val" id="bFaa">–</span></div>
+            <div class="row total"><span class="lbl">Bouguer anomaly g<sub>B</sub></span><span class="val" id="bBa">–</span></div>
+          </div>
+
+          <div class="formula" id="formulaBox"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="figure">
+    <div class="section-title"><h2>Original Sheet</h2><span>原始題目</span></div>
+    <figure class="figure panel">
+      <img src="HW7.png" alt="HW7 題目原圖：Problem 8-2 gravity station data" loading="lazy" />
+      <figcaption>HW7.png — Problem 8-2</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    <div>Geophysics HW7 · Problem 8-2 · <span id="year"></span></div>
+    <div>
+      <a href="https://github.com/oceanicdayi/2026_geophysics_hw7" target="_blank" rel="noopener">Repository</a>
+      ·
+      <a href="https://github.com/oceanicdayi/2026_geophysics_hw7/blob/main/HW7.md" target="_blank" rel="noopener">HW7.md</a>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var $ = function (id) { return document.getElementById(id); };
+
+  var FORMULAS = {
+    "1930": {
+      name: "International Gravity Formula 1930",
+      geo: function (s2) { return 978049 * (1 + 0.0052884 * s2 - 0.0000059 * s2 * (4 - 4 * s2)); },
+      text: "γ = 978,049 (1 + 0.0052884 sin²φ − 0.0000059 sin²2φ) mGal"
+    },
+    "1967": {
+      name: "International Gravity Formula 1967",
+      geo: function (s2) { return 978031.85 * (1 + 0.005278895 * s2 + 0.000023462 * s2 * s2); },
+      text: "γ = 978,031.85 (1 + 0.005278895 sin²φ + 0.000023462 sin⁴φ) mGal"
+    },
+    "1980": {
+      name: "GRS 1980",
+      geo: function (s2) {
+        return 978032.67715 * (1 + 0.0052790414 * s2 + 0.0000232718 * s2 * s2 + 0.0000001262 * s2 * s2 * s2);
+      },
+      text: "γ = 978,032.67715 (1 + 0.0052790414 sin²φ + 0.0000232718 sin⁴φ + 0.0000001262 sin⁶φ) mGal"
+    }
+  };
+
+  var FA_COEF = 0.3086;     // mGal per metre
+  var BOUGUER_COEF = 0.04193; // mGal per (m · g/cm³)
+
+  function fmt(x, digits) {
+    if (!isFinite(x)) return "–";
+    return x.toLocaleString("en-US", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    });
+  }
+
+  function num(id, fallback) {
+    var v = parseFloat($(id).value);
+    return isFinite(v) ? v : fallback;
+  }
+
+  function update() {
+    var lat = num("lat", 48.1195);
+    var h = num("h", 487.9);
+    var gobs = num("gobs", 980717.39);
+    var rho = num("rho", 2.67);
+    var rhow = num("rhow", 1.03);
+    var key = $("formula").value;
+    var F = FORMULAS[key] || FORMULAS["1967"];
+
+    var s2 = Math.pow(Math.sin(lat * Math.PI / 180), 2);
+    var theo = F.geo(s2);
+
+    var fac = FA_COEF * h;
+    var bc = BOUGUER_COEF * rho * h;
+    var faa = gobs - theo + fac;
+    var ba = faa - bc;
+
+    var bcOcean = BOUGUER_COEF * (rho - rhow) * h;
+    var faaOcean = gobs - theo;        // station on sea surface, h = 0
+    var baOcean = faaOcean - bcOcean;
+
+    $("aTheo").textContent = fmt(theo, 2) + " mGal";
+    $("aFac").textContent = fmt(fac, 2) + " mGal";
+    $("aBc").textContent = fmt(bc, 2) + " mGal";
+    $("aFaa").textContent = fmt(faa, 2) + " mGal";
+    $("aBa").textContent = fmt(ba, 2) + " mGal";
+
+    $("bTheo").textContent = fmt(theo, 2) + " mGal";
+    $("bFac").textContent = fmt(0, 2) + " mGal";
+    $("bBc").textContent = fmt(bcOcean, 2) + " mGal";
+    $("bFaa").textContent = fmt(faaOcean, 2) + " mGal";
+    $("bBa").textContent = fmt(baOcean, 2) + " mGal";
+
+    $("formulaBox").innerHTML =
+      "<strong>" + F.name + "</strong><br>" +
+      "<code>" + F.text + "</code><br>" +
+      "Free-air anomaly: <code>g<sub>FA</sub> = g<sub>obs</sub> − γ + 0.3086·h</code><br>" +
+      "Bouguer anomaly: <code>g<sub>B</sub> = g<sub>FA</sub> − 0.04193·ρ·h</code>" +
+      "（海上：<code>h = 0</code>，<code>ρ → ρ − ρ<sub>w</sub></code>，<code>h</code> 為水深）";
+
+    $("formulaHint").textContent = F.name;
+  }
+
+  ["lat", "h", "gobs", "rho", "rhow"].forEach(function (id) {
+    $(id).addEventListener("input", update);
+  });
+  $("formula").addEventListener("change", update);
+
+  $("year").textContent = new Date().getFullYear();
+  update();
+})();
+</script>
+</body>
+</html>
